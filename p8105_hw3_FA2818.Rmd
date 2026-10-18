@@ -1,0 +1,19 @@
+---
+title: "p8105_hw3_FA2818"
+output: html_document
+---
+# Problem 1
+```{r}
+library(tidyverse)
+library(p8105.datasets)
+data("ny_noaa")
+```
+
+```{r}
+nrow(ny_noaa)
+ncol(ny_noaa)
+summary(ny_noaa)
+```
+
+This dataset has 2,595,176 rows and 7 columns. Each row represents one measurement of New York weather from one weather station. Columns include `id`, identifying which weather station the measurement came from, `date`, the date of measurement in year-month-day form, `prcp` represents precipitation in tenths of mm, `snow` represents snowfall in mm, `snwd` represent snow depth in mm, `tmax` and `tmin` give the max and minimum temperature respectively, measured in tenths of degree C. Missing data is extensive, with `pcrp`,  `snow`, and `snowd` having somewhere between 100,000 and 600,000 NA values each, and `tmax` and `tmin` both having 1,134,358 NA values each.
+
