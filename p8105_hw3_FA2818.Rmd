@@ -10,10 +10,33 @@ data("ny_noaa")
 ```
 
 ```{r}
-nrow(ny_noaa)
-ncol(ny_noaa)
 summary(ny_noaa)
 ```
 
-This dataset has 2,595,176 rows and 7 columns. Each row represents one measurement of New York weather from one weather station. Columns include `id`, identifying which weather station the measurement came from, `date`, the date of measurement in year-month-day form, `prcp` represents precipitation in tenths of mm, `snow` represents snowfall in mm, `snwd` represent snow depth in mm, `tmax` and `tmin` give the max and minimum temperature respectively, measured in tenths of degree C. Missing data is extensive, with `pcrp`,  `snow`, and `snowd` having somewhere between 100,000 and 600,000 NA values each, and `tmax` and `tmin` both having 1,134,358 NA values each.
+This dataset has `r nrow(ny_noaa)` and rows and `r ncol(ny_noaa)` columns. Each row represents one measurement of New York weather from one weather station. Columns include `id`, identifying which weather station the measurement came from, `date`, the date of measurement in year-month-day form, `prcp` represents precipitation in tenths of mm, `snow` represents snowfall in mm, `snwd` represent snow depth in mm, `tmax` and `tmin` give the max and minimum temperature respectively, measured in tenths of degree C. Missing data is extensive, with `pcrp`,  `snow`, and `snowd` having somewhere between 100,000 and 600,000 NA values each, and `tmax` and `tmin` both having 1,134,358 NA values each.
 
+```{r}
+ny_noaa = ny_noaa |> 
+  mutate(
+    year = lubridate::year(date),
+    month = lubridate::month(date),
+    day = lubridate::day(date)
+  )
+```
+
+Since snowfall and snow depth are in mm, while precipitation is in tenths of mm, I changed the precipitation to be in mm. Also since the both temperature variables are char variables in tenths of degrees C, I converted them into numeric variables in degrees C.
+
+```{r}
+ny_noaa = ny_noaa |> 
+  mutate(
+    prcp = prcp / 10,
+    tmax = as.numeric(tmax) / 10,
+    tmin = as.numeric(tmin) / 10
+  )
+```
+
+```{r}
+ny_noaa |>  count(snow, sort = TRUE)
+```
+
+Most common value for `snow` is 0 mm, which has 2,008,508 observations. This makes sense since snow in New York is generally limited to winter, so the majority of days throughout the year will not see snow. The second most common value is NA, with 381,221 values. This could be due to faulty equipment, or that some stations do not measure snowfall.
