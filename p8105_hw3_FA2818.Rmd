@@ -1,6 +1,6 @@
 ---
 title: "p8105_hw3_FA2818"
-output: html_document
+output: github_document
 ---
 # Problem 1
 ```{r}
@@ -88,4 +88,78 @@ snowfall_ridge = ny_noaa |>
 library(patchwork)
 tmax_tmin_hex + snowfall_ridge
   
+```
+
+
+## Problem 2
+
+
+```{r}
+covar = read_csv("data/nhanes_covar.csv", skip = 4)
+accel = read_csv("data/nhanes_accel.csv")
+```
+Cleaning Acceleration data
+Converting sex 1 and 2 to male and female and education 123 to less than high school, high school equivalent, and more than high school
+```{r}
+covar = covar |> 
+  mutate(
+    sex = factor(
+      sex,
+      levels = c(1,2),
+      labels = c("male", "female")
+    ),
+    education = factor(
+      education,
+      levels = c(1,2,3),
+      labels = c("less than high school", "high school equivalent", "more than high school"),
+      ordered = TRUE
+    ) 
+  )
+
+```
+
+Get requirements and join with accel
+
+```{r}
+covar = covar |>
+  filter(age >= 21) |> 
+    drop_na()
+nhanes = left_join(covar, accel, by = "SEQN")
+```
+
+Using inline r, tail(names(nhanes)) shows the last column names, since names() truncates
+pivot longer for accel so instead of a bunch of min_x rows, you have a min column with entries x and mims with accel values
+
+```{r}
+nhanes_tidy = pivot_longer(
+  nhanes,
+  min1:min1440,
+  names_to = "minute",
+  names_prefix = "min",
+  values_to = "MIMS"
+)
+```
+
+Making first table
+
+```{r}
+nhanes |> 
+  group_by(sex, education) |> 
+  summarize(
+    count = n()
+  ) |> 
+  pivot_wider(
+    names_from = sex,
+    values_from = count
+  ) |> 
+    knitr::kable()
+  
+```
+
+```{r}
+nhanes |> 
+  ggplot(aes(x = age)) +
+  geom_histogram() +
+  facet_wrap(education ~sex)
+ 
 ```
