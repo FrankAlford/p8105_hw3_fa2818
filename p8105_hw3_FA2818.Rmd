@@ -40,3 +40,52 @@ ny_noaa |>  count(snow, sort = TRUE)
 ```
 
 Most common value for `snow` is 0 mm, which has 2,008,508 observations. This makes sense since snow in New York is generally limited to winter, so the majority of days throughout the year will not see snow. The second most common value is NA, with 381,221 values. This could be due to faulty equipment, or that some stations do not measure snowfall.
+
+
+
+```{r}
+ny_noaa |> 
+  filter(month == 1 | month == 7) |> 
+  group_by(year, month, id) |> 
+  summarize(
+    tmax_mean = mean(tmax, na.rm=TRUE)
+  ) |> 
+  filter(!is.na(tmax_mean)) |> 
+  ggplot(aes(x = year, y=tmax_mean, group=id)) + 
+  geom_line(alpha = 0.25) +
+  facet_grid(. ~ month) +
+  labs(title = "Average Max Temperature for each Station over time",
+       x = "Year",
+       y= "Average High Temperature (degrees C)"
+         )
+  
+```
+
+We see that average temperature is lower in January than July, as expected. There is also no clear trend in temperature from 1980 to 2010 for either months. We see that from year to year, the average temperature fluctuates, but, with the exceptions of several outliers, all stations move in the same direction. The range of temperature across all stations is also consistent from year to year, with a rougly 10 degrees Celsius difference between the station with the highest and lowest average temperature. The most noticable outlier was around 1987, when one station saw recorded an average temperature in July of 14 degrees Celsius, with no other stations close to this value.
+
+```{r}
+tmax_tmin_hex = ny_noaa |> 
+  filter(!is.na(tmax) & !is.na(tmin)) |> 
+  ggplot(aes(x=tmax, y=tmin)) +
+  geom_hex() + 
+  labs(
+    title = "Max temperature vs Min temperature", 
+    x = "Max Temperature (Degrees c)",
+    y = "Min Temeprature (Degrees C)"
+  )
+
+library(ggridges)
+snowfall_ridge = ny_noaa |> 
+  filter(snow > 0 & snow < 100) |> 
+  ggplot(aes(x = snow, y=factor(year))) +
+  geom_density_ridges() + 
+  labs(
+    title = "Snowfall Distribution by Year", 
+    x = "Snowfall between 0 and 100 mm",
+    y = "Year"
+  )
+  
+library(patchwork)
+tmax_tmin_hex + snowfall_ridge
+  
+```
