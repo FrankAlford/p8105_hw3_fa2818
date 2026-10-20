@@ -169,6 +169,7 @@ nhanes |>
   )
  
 ```
+
 The age distributions are generally uniform across sex and education groups, although there are more participants with greater than a high school education. This group also seems to skew younger, with a larger proportion of participants at younger ages.
 
 ```{r}
@@ -192,13 +193,14 @@ nhanes_total |>
     color = "Sex"
   )
 ```
+
 In general, total daily activity decreases with age. Among participants with less than a high school education, this decline is the sharpest, although there is an uptick around ages 50–60 for men and a smaller corresponding increase for women. However, given the relatively small sample size, these fluctuations could be due to outliers. For those with a high school equivalent education, activity peaks around age 40 for both sexes, decreases until approximately age 60, and then levels off. Among participants with more than a high school education, activity remains relatively stable from ages 20–60 before declining at older ages. Women generally have higher total activity than men in the high school equivalent and more than high school groups.
 
 ```{r}
 nhanes_time = nhanes_tidy |> 
   group_by(education, sex, minute) |> 
   summarize(
-    mean_MIMS = mean(MIMS, na.rm = TRUE),
+    mean_MIMS = mean(MIMS, na.rm = TRUE)
   )
 ```
 
@@ -220,6 +222,7 @@ nhanes_time |>
     color = "Sex"
   )
 ```
+
 Across all three education levels, the general pattern is similar. Activity is lowest during the night, reaching its minimum around 4 AM, before increasing rapidly between 6 AM and noon. Activity generally peaks around noon, remains relatively high until 6 PM, and then steadily declines throughout the evening. The high school equivalent and more than high school groups show similar patterns, with activity remaining fairly constant between noon and 6 PM. In contrast, the less than high school group reaches a higher peak around noon, followed by a more gradual decline throughout the afternoon and a sharper decrease after 6 PM.
 
 
@@ -279,7 +282,53 @@ citi |>
   ) |> 
   knitr::kable()
 ```
+
 In January 2020, there were over ten times as many rides taken by members as casual riders. Ridership increased in both categories by July 2020, with casual rides increasing from 984 to 5,637. In January 2024, casual ridership fell to 2,108, while member ridership remained relatively similar to July 2020 at 16,753. By July 2024, ridership had increased substantially in both categories, with member rides more than doubling from January to 36,262 and casual rides increasing more than fivefold to 10,894. For both years, ridership was much higher in July than in January, although causual ridership is much more sensitive to the seasons. This makes sense, since these riders are less likely to be commuters and more likely using for convenience or recreation. This kind of use is likely more sensitive to winter weather conditions in New York.
 
 
+```{r}
+citi |> 
+  filter(year == 2024, month == "July") |> 
+  count(start_station_name, sort = TRUE) |> 
+  head(5) |> 
+  knitr::kable()
+```
 
+```{r}
+citi_median = citi |> 
+  group_by(year, month, weekdays) |> 
+  summarize(
+    median_duration = median(duration, na.rm = TRUE)
+  )
+```
+
+```{r}
+citi_median |> 
+  ggplot(aes(x = weekdays, y = median_duration, group = 1)) +
+  geom_line() +
+  facet_grid(year ~ month) +
+  labs(
+    title = "Median Ride Duration",
+    x = "Day of Week",
+    y = "Median Ride Duration (minutes)"
+  )
+```
+
+Median ride duration was higher in July than in January for both years, and duration was longer in 2020 than in 2024. January of 2024 is the only month where ride duration was not higher on the weekends. Higher weekend ride duration was particularly pronounced in July of 2020. The longer ride duration on the weekends could point to recreational use on the weekends. The median ride duration is also steady during the week.
+
+
+```{r}
+citi |> 
+  filter(year == 2024, !is.na(duration), duration > 0) |> 
+  ggplot(aes(x = duration, color = rideable_type)) +
+  geom_density() +
+  facet_grid(member_casual ~ month) +
+  labs(
+    title = "Distribution of Ride Duration in 2024",
+    x = "Ride Duration (minutes)",
+    y = "Density",
+    color = "Bike Type"
+  ) + coord_cartesian(xlim = c(0, 60))
+```
+
+Across all groups, most rides are concentrated within the first ten minutes, and the distributions are heavily right-skewed. This makes sense since many rides are relatively short, while ride durations cannot be negative. Casual riders generally take longer rides, while members' ride durations are more tightly concentrated near zero. Among casual riders, electric bikes have a sharper peak at shorter durations, while classic bikes tend to have a greater proportion of longer rides. For members, the distributions of classic and electric bikes are much more similar. In January, the two distributions are nearly the same, while in July, electric bike rides tend to be slightly longer. Membership status seems to have a greater effect on the distribution than bike type.
