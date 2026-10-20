@@ -137,7 +137,8 @@ nhanes_tidy = pivot_longer(
   names_to = "minute",
   names_prefix = "min",
   values_to = "MIMS"
-)
+) |> 
+  mutate(minute = as.integer(minute))
 ```
 
 Making first table
@@ -160,6 +161,63 @@ nhanes |>
 nhanes |> 
   ggplot(aes(x = age)) +
   geom_histogram() +
-  facet_wrap(education ~sex)
+  facet_wrap(education ~sex) +   
+  labs(
+    title = "Distribution of Age by Sex and Education",
+    x = "Age",
+    y = "Number of People"
+  )
  
 ```
+The age distributions are generally uniform across sex and education groups, although there are more participants with greater than a high school education. This group also seems to skew younger, with a larger proportion of participants at younger ages.
+
+```{r}
+nhanes_total = nhanes_tidy |> 
+  group_by(SEQN, age, sex, education) |> 
+  summarize(
+    total_activity = sum(MIMS, na.rm = TRUE)
+    )
+```
+
+```{r}
+nhanes_total |> 
+  ggplot(aes(x = age, y = total_activity, color = sex)) +
+  geom_point(alpha = 0.75) +
+  geom_smooth(se = FALSE) +
+  facet_wrap(~education) +
+  labs(
+    title = "Total Daily Activity by Age",
+    x = "Age",
+    y = "Total Daily Activity",
+    color = "Sex"
+  )
+```
+In general, total daily activity decreases with age. Among participants with less than a high school education, this decline is the sharpest, although there is an uptick around ages 50–60 for men and a smaller corresponding increase for women. However, given the relatively small sample size, these fluctuations could be due to outliers. For those with a high school equivalent education, activity peaks around age 40 for both sexes, decreases until approximately age 60, and then levels off. Among participants with more than a high school education, activity remains relatively stable from ages 20–60 before declining at older ages. Women generally have higher total activity than men in the high school equivalent and more than high school groups.
+
+```{r}
+nhanes_time = nhanes_tidy |> 
+  group_by(education, sex, minute) |> 
+  summarize(
+    mean_MIMS = mean(MIMS, na.rm = TRUE),
+  )
+```
+
+
+```{r}
+nhanes_time |> 
+  ggplot(aes(x = minute, y = mean_MIMS, color = sex)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  facet_wrap(. ~education) +
+  scale_x_continuous(
+    breaks = c(0, 360, 720, 1080, 1440),
+    labels = c("12 AM", "6 AM", "12 PM", "6 PM", "12 AM")
+  ) +
+  labs(
+    title = "Average Activity Throughout the Day",
+    x = "Time of Day",
+    y = "Average MIMS",
+    color = "Sex"
+  )
+```
+Across all three education levels, the general pattern is similar. Activity is lowest during the night, reaching its minimum around 4 AM, before increasing rapidly between 6 AM and noon. Activity generally peaks around noon, remains relatively high until 6 PM, and then steadily declines throughout the evening. The high school equivalent and more than high school groups show similar patterns, with activity remaining fairly constant between noon and 6 PM. In contrast, the less than high school group reaches a higher peak around noon, followed by a more gradual decline throughout the afternoon and a sharper decrease after 6 PM.
